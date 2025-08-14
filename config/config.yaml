@@ -1,0 +1,45 @@
+server:
+  HOST: "0.0.0.0" # 监听地址
+  PORT: "8081"    # 监听端口
+  ENV: "debug"    # 环境模式 release/debug/test
+
+jwt:
+  jwt_auth: Authorization #Http請求頭
+  jwt_key: "your_secret_key" #jwtKey
+  token_timeOut : 60 # token失效時間(分)
+
+
+mysql:
+  host: 127.0.0.1
+  port: 13306
+  name: trade
+  user: root
+  pwd: tony0204
+  charset: utf8
+  pool:
+    max_open_conns: 20 # 连接池最大连接数
+    max_idle_conns: 10 # 连接池最大空闲数
+    max_lifetime_conns: 7200 # 连接池链接最长生命周期
+
+rabbitmq:
+  user: tony
+  pwd: tony0204
+  host: 127.0.0.1
+  port: 5672
+
+redis:
+  addr: localhost:6379 #  Redis 地址
+  password : #  如果没有设置密码，则留空
+  db : 0 #使用默认的 DB
+
+mongodb:
+  url: "mongodb://localhost:27017"
+
+glog:
+  logConfLevel: INFO #日志级别 紀錄設定級別以上的日誌
+  logPath: /Users/sai/Desktop/ #日志文件路径
+  logType: file #日志输出类型
+
+http:
+  headerTrace: Request-Id
+
