@@ -1,0 +1,260 @@
+{
+	"info": {
+		"_postman_id": "04251618-750f-4b9a-9b47-112620903118",
+		"name": "Trad",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20383253"
+	},
+	"item": [
+		{
+			"name": "查詢買單列",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8081/tradeMatching/checkQueueMap?direction=BUY",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8081",
+					"path": [
+						"tradeMatching",
+						"checkQueueMap"
+					],
+					"query": [
+						{
+							"key": "direction",
+							"value": "BUY"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "查詢賣單列",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8081/tradeMatching/checkQueueMap?direction=SELL",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8081",
+					"path": [
+						"tradeMatching",
+						"checkQueueMap"
+					],
+					"query": [
+						{
+							"key": "direction",
+							"value": "SELL"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "限價賣單下單",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"memberId\": 10001,\n  \"type\": \"LIMIT_PRICE\",\n  \"direction\": \"SELL\",\n  \"amount\": \"1.5\",\n  \"symbol\": \"BTC/USDT\",\n  \"coinSymbol\": \"BTC\",\n  \"price\": \"30000\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8081/tradeMatching/sellOrder",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8081",
+					"path": [
+						"tradeMatching",
+						"sellOrder"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "限價買單下單",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"memberId\": 10001,\n  \"type\": \"LIMIT_PRICE\",\n  \"direction\": \"BUY\",\n  \"amount\": \"1\",\n  \"symbol\": \"BTC/USDT\",\n  \"coinSymbol\": \"BTC\",\n  \"price\": \"10000\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8081/tradeMatching/buyOrder",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8081",
+					"path": [
+						"tradeMatching",
+						"buyOrder"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "限價賣單取消",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"orderId\" : \"SELL100011755067521826\",  \n  \"memberId\": 10001,\n  \"direction\": \"SELL\",\n  \"price\": \"30000\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8081/tradeMatching/sellOrderCancel",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8081",
+					"path": [
+						"tradeMatching",
+						"sellOrderCancel"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "限價買單取消",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"orderId\" : \"BUY100011755067160543\",  \n  \"memberId\": 10001,\n  \"direction\": \"BUY\",\n  \"price\": \"30000\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8081/tradeMatching/buyOrderCancel",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8081",
+					"path": [
+						"tradeMatching",
+						"buyOrderCancel"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "市價買單下單",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"memberId\": 10001,\n  \"type\": \"MARKET_PRICE\",\n  \"direction\": \"BUY\",\n  \"amount\": \"1\",\n  \"symbol\": \"BTC/USDT\",\n  \"coinSymbol\": \"BTC\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8081/tradeMatching/buyOrder",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8081",
+					"path": [
+						"tradeMatching",
+						"buyOrder"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "市價賣單下單",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"memberId\": 10001,\n  \"type\": \"MARKET_PRICE\",\n  \"direction\": \"SELL\",\n  \"amount\": \"1\",\n  \"symbol\": \"BTC/USDT\",\n  \"coinSymbol\": \"BTC\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8081/tradeMatching/sellOrder",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8081",
+					"path": [
+						"tradeMatching",
+						"sellOrder"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
