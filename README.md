@@ -47,3 +47,9 @@
 <br />
 
 ![image](https://github.com/lzz0826/MatchmakingTransactions/blob/main/imges/001.png)
+<br />
+<br />
+測試用API: test/Trad.postman_collection.json
+<br />
+
+
