@@ -20,7 +20,7 @@ type OrderDetail struct {
 	Type      enum.ExchangeOrderType      `gorm:"column:order_type;comment:'訂單類型 LIMIT/MARKET'" json:"type"`
 
 	// 僅部分事件會用到的欄位
-	Price          decimal.Decimal `gorm:"column:price;comment:'價格(下單價或成交價)'" json:"price"`
+	Price          decimal.Decimal `gorm:"column:price;comment:'下單價'" json:"price"`
 	Amount         decimal.Decimal `gorm:"column:amount;comment:'掛單數量'" json:"amount"`
 	TradedAmount   decimal.Decimal `gorm:"column:traded_amount;comment:'已成交數量'" json:"tradedAmount"`
 	UntradedAmount decimal.Decimal `gorm:"column:untraded_amount;comment:'未成交數量'" json:"untradedAmount"`

@@ -53,7 +53,7 @@ CREATE TABLE `order_detail` (
                                 `symbol` VARCHAR(64) NOT NULL COMMENT '交易符號',
                                 `direction` VARCHAR(16) NOT NULL COMMENT '訂單方向 BUY/SELL',
                                 `order_type` VARCHAR(16) NOT NULL COMMENT '訂單類型 LIMIT/MARKET',
-                                `price` DECIMAL(32,16) DEFAULT NULL COMMENT '價格(下單價或成交價)',
+                                `price` DECIMAL(32,16) DEFAULT NULL COMMENT '下單價',
                                 `amount` DECIMAL(32,16) DEFAULT NULL COMMENT '掛單數量',
                                 `traded_amount` DECIMAL(32,16) DEFAULT NULL COMMENT '已成交數量',
                                 `untraded_amount` DECIMAL(32,16) DEFAULT NULL COMMENT '未成交數量',
