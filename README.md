@@ -1,27 +1,6 @@
 # TradeMatching
 
 <br />
-
-## 市價單（Market Order）的核心邏輯:
-買入市價單：
-<br />
-不指定價格，以當前賣單的最低價格開始成交，直到數量用完或賣單沒了。
-<br />
-賣出市價單：
-<br />
-不指定價格，以當前買單的最高價格開始成交，直到數量用完或買單沒了。
-<br />
-特點：
-<br />
-不會掛在訂單簿（因為立刻成交）。
-<br />
-可能會部分成交（如果流動性不足）。
-<br />
-
-<br />
-<br />
-
-
 ## 限價單（Limit Order）的核心邏輯
 <br />
 買入限價單：
@@ -46,3 +25,25 @@
 <br />
 <br />
 
+![image](https://github.com/lzz0826/MatchmakingTransactions/blob/main/imges/002.png)
+
+## 市價單（Market Order）的核心邏輯:
+買入市價單：
+<br />
+不指定價格，以當前賣單的最低價格開始成交，直到數量用完或賣單沒了。
+<br />
+賣出市價單：
+<br />
+不指定價格，以當前買單的最高價格開始成交，直到數量用完或買單沒了。
+<br />
+特點：
+<br />
+不會掛在訂單簿（因為立刻成交）。
+<br />
+可能會部分成交（如果流動性不足）。
+<br />
+
+<br />
+<br />
+
+![image](https://github.com/lzz0826/MatchmakingTransactions/blob/main/imges/001.png)
