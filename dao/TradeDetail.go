@@ -4,6 +4,7 @@ import (
 	"TradeMatching/common/myContext"
 	"TradeMatching/common/mysql"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 	"log"
 	"time"
 )
@@ -28,4 +29,9 @@ func InsertTradeDetail(ctx *myContext.MyContext, tradeDetail *TradeDetail) (err 
 		return
 	}
 	return nil
+}
+
+// InsertTradeDetailTransaction 事務
+func InsertTradeDetailTransaction(tx *gorm.DB, tradeDetail *TradeDetail) (err error) {
+	return tx.Table("trade_detail").Omit("id").Create(&tradeDetail).Error
 }

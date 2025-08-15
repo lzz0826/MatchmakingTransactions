@@ -68,16 +68,13 @@ func SellOrder(ctx *myContext.MyContext) {
 		UseDiscount:  "0",
 		TradedAmount: decimal.Zero,
 	}
-
-	//創建訂單
-	err := server.CreateOrder(ctx, order)
+	
+	//創建訂單 紀錄訂明細(事務)
+	err := server.CreateOrderANDRecordTradeDetailDelect(ctx, order)
 	if err != nil {
 		ctx.JSON(http.StatusOK, tool.RespFail(err.Code(), err.Msg(), nil))
 		return
 	}
-
-	//紀錄訂明細
-	server.RecordTradeDetailDelect(ctx, order, enum.CREATE)
 
 	//判斷 市價單 限價單
 	if orderType == enum.MARKET_PRICE {
@@ -94,7 +91,7 @@ func SellOrder(ctx *myContext.MyContext) {
 	ctx.JSON(http.StatusOK, tool.RespOkStatus(&tool.SellOrderSuccess, tool.RespOk(order)))
 }
 
-// SellOrder掛買單
+// BuyOrder掛買單
 func BuyOrder(ctx *myContext.MyContext) {
 	orderReq := req.BuyOrderReq{}
 	if err := ctx.ShouldBindJSON(&orderReq); err != nil {
@@ -150,14 +147,12 @@ func BuyOrder(ctx *myContext.MyContext) {
 		TradedAmount: decimal.Zero,
 	}
 
-	//創建訂單
-	err := server.CreateOrder(ctx, order)
+	//創建訂單 紀錄訂明細(事務)
+	err := server.CreateOrderANDRecordTradeDetailDelect(ctx, order)
 	if err != nil {
 		ctx.JSON(http.StatusOK, tool.RespFail(err.Code(), err.Msg(), nil))
 		return
 	}
-	//紀錄訂明細
-	server.RecordTradeDetailDelect(ctx, order, enum.CREATE)
 
 	//判斷 市價單 限價單
 	if orderType == enum.MARKET_PRICE {

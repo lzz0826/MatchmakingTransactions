@@ -4,6 +4,7 @@ import (
 	"TradeMatching/common/myContext"
 	"TradeMatching/common/mysql"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 	"log"
 	"time"
 )
@@ -38,13 +39,24 @@ func InsertExchangeOrder(ctx *myContext.MyContext, e *ExchangeOrder) (err error)
 	return nil
 }
 
-// updates := map[string]interface{}{
-// "status": "completed",
-// "price":  123.45,
-// }
 // UpdateExchangeOrderByOderId 更新 exchange_order 表中指定 order_id 的欄位 只有交易中才能被更新
 func UpdateExchangeOrderByOderId(orderId string, updatesReq interface{}) (int64, error) {
 	result := mysql.GormDb.Table("exchange_order").Where("order_id = ? AND status = 'TRADING' ", orderId).Updates(updatesReq)
+	if result.Error != nil {
+		log.Println(result.Error)
+		return 0, result.Error
+	}
+	return result.RowsAffected, nil
+}
+
+// InsertExchangeOrderTransaction 事務
+func InsertExchangeOrderTransaction(tx *gorm.DB, e *ExchangeOrder) (err error) {
+	return tx.Table("exchange_order").Omit("id").Create(&e).Error
+}
+
+// UpdateExchangeOrderByOderIdTransaction 事務
+func UpdateExchangeOrderByOderIdTransaction(tx *gorm.DB, orderId string, updatesReq interface{}) (int64, error) {
+	result := tx.Table("exchange_order").Where("order_id = ? AND status = 'TRADING' ", orderId).Updates(updatesReq)
 	if result.Error != nil {
 		log.Println(result.Error)
 		return 0, result.Error

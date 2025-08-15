@@ -5,6 +5,7 @@ import (
 	"TradeMatching/common/errors"
 	"TradeMatching/common/glog"
 	"TradeMatching/common/myContext"
+	"TradeMatching/common/mysql"
 	"TradeMatching/common/tool"
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/shopspring/decimal"
@@ -347,7 +348,7 @@ func (t *tradeMatchingService) OrderDelete(ctx *myContext.MyContext, e enum.Exch
 				for i, v := range mergeOrder.orders {
 					if v.OrderId == orderId {
 						// 紀錄取消交易明細
-						RecordTradeDetailDelect(ctx, v, enum.CANCEL)
+						RecordTradeDetailDelect(ctx, mysql.GormDb, v, enum.CANCEL)
 						// 更新資料庫，將訂單設為取消狀態
 						UpdateTradedOrder(ctx, v, enum.CANCELED)
 						// 從該價格隊列中移除該筆訂單
@@ -379,7 +380,7 @@ func (t *tradeMatchingService) OrderDelete(ctx *myContext.MyContext, e enum.Exch
 				for i, v := range mergeOrder.orders {
 					if v.OrderId == orderId {
 						// 紀錄取消交易明細
-						RecordTradeDetailDelect(ctx, v, enum.CANCEL)
+						RecordTradeDetailDelect(ctx, mysql.GormDb, v, enum.CANCEL)
 						// 更新資料庫，將訂單設為取消狀態
 						UpdateTradedOrder(ctx, v, enum.CANCELED)
 						// 從該價格隊列中移除該筆訂單

@@ -5,10 +5,13 @@ import (
 	"TradeMatching/common/errors"
 	"TradeMatching/common/glog"
 	"TradeMatching/common/myContext"
+	"TradeMatching/common/mysql"
 	"TradeMatching/common/tool"
 	"TradeMatching/dao"
 	"fmt"
 	"github.com/shopspring/decimal"
+	"golang.org/x/net/context"
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -19,10 +22,11 @@ func GetOrderId(direction enum.ExchangeOrderDirection, memberId string, milliTim
 
 // CreateOrder 創建訂單。
 // 參數:
-// - e: 當前下單的訂單資訊。
+// - e: 當前下單的訂單資訊
+// - tx: 事務上下文
 // 回傳:
 // - *errors.Errx: 如果發生錯誤則回傳錯誤，成功則為 nil。
-func CreateOrder(ctx *myContext.MyContext, e ExchangeOrder) *errors.Errx {
+func CreateOrder(ctx *myContext.MyContext, tx *gorm.DB, e ExchangeOrder) *errors.Errx {
 	glog.Infof("創建訂單 CreateOrder Trace: %v ExchangeOrder: %v", ctx.Trace, e)
 	order := &dao.ExchangeOrder{
 		OrderId:       e.OrderId,
@@ -42,7 +46,7 @@ func CreateOrder(ctx *myContext.MyContext, e ExchangeOrder) *errors.Errx {
 		CanceledTime:  e.CanceledTime,
 		UseDiscount:   e.UseDiscount,
 	}
-	err := dao.InsertExchangeOrder(ctx, order)
+	err := dao.InsertExchangeOrderTransaction(tx, order)
 	if err != nil {
 		return errors.NewBizErrx(tool.CreateOrderError.Code, tool.CreateOrderError.Msg)
 	}
@@ -120,10 +124,11 @@ func UpdateTradedOrder(ctx *myContext.MyContext, e ExchangeOrder, status enum.Ex
 // RecordTradeDetailDelect 紀錄此次 "訂單" 交易取消明細
 // 參數:
 // - ctx: 請求上下文，包含請求相關資料。
+// - tx: 事務上下文
 // - current: 當前下單的訂單資訊。
 // 回傳:
 // - *errors.Errx: 如果發生錯誤則回傳錯誤，成功則為 nil。
-func RecordTradeDetailDelect(ctx *myContext.MyContext, current ExchangeOrder, et enum.EventType) *errors.Errx {
+func RecordTradeDetailDelect(ctx *myContext.MyContext, tx *gorm.DB, current ExchangeOrder, et enum.EventType) *errors.Errx {
 	oderDetail := dao.OrderDetail{
 		OrderId:        current.OrderId,
 		MemberId:       current.MemberId,
@@ -142,11 +147,47 @@ func RecordTradeDetailDelect(ctx *myContext.MyContext, current ExchangeOrder, et
 		ApiKeyId:       "",
 		CreatedTime:    time.Now(),
 	}
+
+	//測試事務
+	//_, err := utils.SafeDiv(10, 0)
+	//if err != nil {
+	//	return errors.NewBizErrx(tool.RecordOrderDetailError.Code, tool.RecordOrderDetailError.Msg)
+	//}
+
 	glog.Infof("紀錄交易取消明細 recordTradeDetailDelect Trace: %v oderDetail: %v", ctx.Trace, oderDetail)
-	err := dao.InsertOrderDetail(ctx, &oderDetail)
+	err := dao.InsertOrderDetailTransaction(tx, &oderDetail)
 	if err != nil {
 		glog.Errorf("紀錄交易取消明細失敗: recordTradeDetailDelect Trace: %v error: %v", ctx.Trace, err)
 		return errors.NewBizErrx(tool.RecordOrderDetailError.Code, tool.RecordOrderDetailError.Msg)
+	}
+	return nil
+}
+
+// CreateOrderANDRecordTradeDetailDelect 創建訂單+訂單明細
+func CreateOrderANDRecordTradeDetailDelect(muCtx *myContext.MyContext, e ExchangeOrder) *errors.Errx {
+	// 加個 context timeout，避免交易卡死
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	var repError *errors.Errx
+	err := mysql.GormDb.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 使用事務版本的 CreateOrder
+		if e1 := CreateOrder(muCtx, tx, e); e1 != nil {
+			repError = e1
+			return e1
+		}
+		// 使用事務版本的 RecordTradeDetailDelect
+		if e2 := RecordTradeDetailDelect(muCtx, tx, e, enum.CREATE); e2 != nil {
+			repError = e2
+			return e2
+		}
+		// 任一錯誤直接 return -> 自動 Rollback；正常 return nil -> 自動 Commit
+		return nil
+	})
+
+	if err != nil {
+		// 統一處理失敗
+		return repError
+		// log.Printf("轉帳失敗: %v", err)
 	}
 	return nil
 }
