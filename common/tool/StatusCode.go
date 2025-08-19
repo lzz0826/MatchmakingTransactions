@@ -34,6 +34,7 @@ var (
 	Success           = Status{Code: 0, Msg: "成功"}
 	SystemError       = Status{Code: -1, Msg: "失敗"}
 	MissingParameters = Status{Code: 1, Msg: "缺少必要參數"}
+	Test              = Status{Code: 99, Msg: "測試"}
 
 	//Redis 100
 	SetRedisKeyError = Status{Code: 100, Msg: "Redis Set錯誤"}

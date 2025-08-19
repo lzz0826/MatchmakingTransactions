@@ -7,9 +7,12 @@ import (
 	"TradeMatching/common/myContext"
 	"TradeMatching/common/mysql"
 	"TradeMatching/common/tool"
+	"context"
 	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 	"sync"
+	"time"
 )
 
 func init() {
@@ -150,7 +153,10 @@ func (t *tradeMatchingService) AddMarketPriceOrder(ctx *myContext.MyContext, e E
 			price := iterator.Key().(decimal.Decimal)
 			//市價單則是指不指定價格，以當時市場上的最佳價格立即成交。
 			mergeOrder := iterator.Value().(*MergeOrder)
-			matchOrders(ctx, &e, &mergeOrder.orders)
+			err := matchOrders(ctx, mysql.GormDb, &e, &mergeOrder.orders)
+			if err != nil {
+				return err
+			}
 			// 若整個價格點的賣單都吃光了，從 map 移除該價位
 			if len(mergeOrder.orders) == 0 {
 				sellLimitPriceQueue.sellLimitPriceQueue.Remove(price)
@@ -159,10 +165,16 @@ func (t *tradeMatchingService) AddMarketPriceOrder(ctx *myContext.MyContext, e E
 		// 撮合完 立即成交，未成交的部分應直接取消
 		if e.Amount.GreaterThan(decimal.Zero) {
 			//部分成交
-			UpdateTradedOrder(ctx, e, enum.PARTIAL_COMPLETED)
+			err := UpdateTradedOrder(ctx, mysql.GormDb, e, enum.PARTIAL_COMPLETED)
+			if err != nil {
+				return err
+			}
 		} else {
 			//當前訂完整搓合完更新訂單
-			UpdateTradedOrder(ctx, e, enum.COMPLETED)
+			err := UpdateTradedOrder(ctx, mysql.GormDb, e, enum.COMPLETED)
+			if err != nil {
+				return err
+			}
 		}
 	} else if e.Direction == enum.SELL {
 		iterator := buyLimitPriceQueue.buyLimitPriceQueue.Iterator()
@@ -170,7 +182,10 @@ func (t *tradeMatchingService) AddMarketPriceOrder(ctx *myContext.MyContext, e E
 			price := iterator.Key().(decimal.Decimal)
 			//市價單則是指不指定價格，以當時市場上的最佳價格立即成交。
 			mergeOrder := iterator.Value().(*MergeOrder)
-			matchOrders(ctx, &e, &mergeOrder.orders)
+			err := matchOrders(ctx, mysql.GormDb, &e, &mergeOrder.orders)
+			if err != nil {
+				return err
+			}
 			// 若整個價格點的賣單都吃光了，從 map 移除該價位
 			if len(mergeOrder.orders) == 0 {
 				buyLimitPriceQueue.buyLimitPriceQueue.Remove(price)
@@ -179,10 +194,16 @@ func (t *tradeMatchingService) AddMarketPriceOrder(ctx *myContext.MyContext, e E
 		// 撮合完 立即成交，未成交的部分應直接取消
 		if e.Amount.GreaterThan(decimal.Zero) {
 			//部分成交
-			UpdateTradedOrder(ctx, e, enum.PARTIAL_COMPLETED)
+			err := UpdateTradedOrder(ctx, mysql.GormDb, e, enum.PARTIAL_COMPLETED)
+			if err != nil {
+				return err
+			}
 		} else {
 			//當前訂完整搓合完更新訂單
-			UpdateTradedOrder(ctx, e, enum.COMPLETED)
+			err := UpdateTradedOrder(ctx, mysql.GormDb, e, enum.COMPLETED)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -203,34 +224,16 @@ func (t *tradeMatchingService) AddMarketPriceOrder(ctx *myContext.MyContext, e E
 // 3. 使用 matchOrders 進行撮合，更新對手隊列。
 // 4. 若該價位所有訂單已撮合完，從隊列中移除該價格。
 // 5. 若撮合後仍有剩餘數量，將訂單加入對應隊列；否則標記訂單為完成。
-// 6. 返回錯誤訊息（目前無錯誤處理，返回 nil）。
 // 買進單需要匹配的價格不大於委託價，否則退出
 // 賣出單需要匹配的價格不小於委託價，否則退出
 func (t *tradeMatchingService) AddLimitPriceOrder(ctx *myContext.MyContext, e ExchangeOrder) *errors.Errx {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	if e.Direction == enum.BUY {
-		iterator := sellLimitPriceQueue.sellLimitPriceQueue.Iterator()
-		for iterator.Next() && e.Amount.GreaterThan(decimal.Zero) {
-			price := iterator.Key().(decimal.Decimal)
-			// 只匹配賣價 <= 買價
-			if e.Price.GreaterThanOrEqual(price) {
-				mergeOrder := iterator.Value().(*MergeOrder)
-				matchOrders(ctx, &e, &mergeOrder.orders)
-				// 若整個價格點的賣單都吃光了，從 map 移除該價位
-				if len(mergeOrder.orders) == 0 {
-					sellLimitPriceQueue.sellLimitPriceQueue.Remove(price)
-				}
-			} else {
-				break // 價格不符合，停止遍歷
-			}
-		}
-		// 撮合完還有剩，掛入買單隊列
-		if e.Amount.GreaterThan(decimal.Zero) {
-			addToBuyQueue(e)
-		} else {
-			//當前訂完整搓合完更新訂單
-			UpdateTradedOrder(ctx, e, enum.COMPLETED)
+		//帶事務 參考
+		err := AddLimitPriceOrderBuyTransaction(ctx, e)
+		if err != nil {
+			return err
 		}
 	} else if e.Direction == enum.SELL {
 		iterator := buyLimitPriceQueue.buyLimitPriceQueue.Iterator()
@@ -239,7 +242,7 @@ func (t *tradeMatchingService) AddLimitPriceOrder(ctx *myContext.MyContext, e Ex
 			// 只匹配買價 <= 賣價
 			if e.Price.LessThanOrEqual(price) {
 				mergeOrder := iterator.Value().(*MergeOrder)
-				matchOrders(ctx, &e, &mergeOrder.orders)
+				matchOrders(ctx, mysql.GormDb, &e, &mergeOrder.orders)
 				// 若整個價格點的賣單都吃光了，從 map 移除該價位
 				if len(mergeOrder.orders) == 0 {
 					buyLimitPriceQueue.buyLimitPriceQueue.Remove(price)
@@ -253,7 +256,7 @@ func (t *tradeMatchingService) AddLimitPriceOrder(ctx *myContext.MyContext, e Ex
 			addToSellQueue(e)
 		} else {
 			//當前訂完整搓合完更新訂單
-			UpdateTradedOrder(ctx, e, enum.COMPLETED)
+			UpdateTradedOrder(ctx, mysql.GormDb, e, enum.COMPLETED)
 		}
 	}
 	return nil
@@ -266,6 +269,7 @@ func (t *tradeMatchingService) AddLimitPriceOrder(ctx *myContext.MyContext, e Ex
 //
 // 參數：
 // - ctx: 請求上下文，包含請求相關資料與狀態。
+// - tx:  事務上下文
 // - current: 指向當前待撮合訂單的指標。
 // - opponents: 指向對手訂單切片指標，按照先進先出順序撮合。
 //
@@ -275,7 +279,7 @@ func (t *tradeMatchingService) AddLimitPriceOrder(ctx *myContext.MyContext, e Ex
 // 3. 根據撮合數量計算成交金額，更新雙方成交數量與成交額。
 // 4. 紀錄本次撮合明細，更新訂單狀態為交易中。
 // 5. 若對手訂單成交完畢，更新其狀態為完成並從對手列表中移除；否則停止撮合等待下一輪。
-func matchOrders(ctx *myContext.MyContext, current *ExchangeOrder, opponents *[]ExchangeOrder) {
+func matchOrders(ctx *myContext.MyContext, tx *gorm.DB, current *ExchangeOrder, opponents *[]ExchangeOrder) *errors.Errx {
 	// 只要還有對手單、並且當前訂單還沒撮合完，就持續撮合
 	for len(*opponents) > 0 && current.Amount.GreaterThan(decimal.Zero) {
 
@@ -305,22 +309,34 @@ func matchOrders(ctx *myContext.MyContext, current *ExchangeOrder, opponents *[]
 		glog.Infof("Trace %v BuyOrder matchOrders: 當前方orderID: %v 對手方orderID: %v", ctx.Trace, current.OrderId, current.OrderId)
 
 		// 紀錄此次撮合交易紀錄 下單方 對手方
-		RecordTradeDetail(ctx, *current, *opponent, turnover, matchAmount)
+		repError := RecordTradeDetail(ctx, tx, *current, *opponent, turnover, matchAmount)
+		if repError != nil {
+			return repError
+		}
 		// 更新撮合交易訂單 當前 交易中
-		UpdateTradedOrder(ctx, *current, enum.TRADING)
+		repError = UpdateTradedOrder(ctx, tx, *current, enum.TRADING)
+		if repError != nil {
+			return repError
+		}
 		// 更新撮合交易訂單 對手 交易中
-		UpdateTradedOrder(ctx, *opponent, enum.TRADING)
-
+		repError = UpdateTradedOrder(ctx, tx, *opponent, enum.TRADING)
+		if repError != nil {
+			return repError
+		}
 		// 如果對手單已全部成交，從佇列中移除
 		if opponent.Amount.IsZero() {
 			// 更新撮合交易訂單 對手 交易完成
-			UpdateTradedOrder(ctx, *opponent, enum.COMPLETED)
+			repError = UpdateTradedOrder(ctx, tx, *opponent, enum.COMPLETED)
+			if repError != nil {
+				return repError
+			}
 			*opponents = (*opponents)[1:] // 移除第一筆
 		} else {
 			// 對手單還有剩，就不再往下撮合（等下一次進來再繼續）
 			break
 		}
 	}
+	return nil
 }
 
 // OrderDelete 取消訂單 (只能取消尚未撮合完成的訂單)
@@ -350,7 +366,7 @@ func (t *tradeMatchingService) OrderDelete(ctx *myContext.MyContext, e enum.Exch
 						// 紀錄取消交易明細
 						RecordTradeDetailDelect(ctx, mysql.GormDb, v, enum.CANCEL)
 						// 更新資料庫，將訂單設為取消狀態
-						UpdateTradedOrder(ctx, v, enum.CANCELED)
+						UpdateTradedOrder(ctx, mysql.GormDb, v, enum.CANCELED)
 						// 從該價格隊列中移除該筆訂單
 						mergeOrder.orders = append(mergeOrder.orders[:i], mergeOrder.orders[i+1:]...)
 						// 若該價位訂單已清空，則從整個撮合佇列中移除該價位
@@ -382,7 +398,7 @@ func (t *tradeMatchingService) OrderDelete(ctx *myContext.MyContext, e enum.Exch
 						// 紀錄取消交易明細
 						RecordTradeDetailDelect(ctx, mysql.GormDb, v, enum.CANCEL)
 						// 更新資料庫，將訂單設為取消狀態
-						UpdateTradedOrder(ctx, v, enum.CANCELED)
+						UpdateTradedOrder(ctx, mysql.GormDb, v, enum.CANCELED)
 						// 從該價格隊列中移除該筆訂單
 						mergeOrder.orders = append(mergeOrder.orders[:i], mergeOrder.orders[i+1:]...)
 						// 若該價位訂單已清空，則從整個撮合佇列中移除該價位
@@ -400,6 +416,53 @@ func (t *tradeMatchingService) OrderDelete(ctx *myContext.MyContext, e enum.Exch
 			//找不到符合的賣單
 			return errors.NewBizErrx(tool.SellOrdersNotFound.Code, tool.SellOrdersNotFound.Msg)
 		}
+	}
+	return nil
+}
+
+// AddLimitPriceOrderBuyTransaction 事務 TODO **事務確實回滾但會與 買賣簿MAP不同步
+func AddLimitPriceOrderBuyTransaction(muCtx *myContext.MyContext, e ExchangeOrder) *errors.Errx {
+	// 加個 context timeout，避免交易卡死
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	var repError *errors.Errx
+	err := mysql.GormDb.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		iterator := sellLimitPriceQueue.sellLimitPriceQueue.Iterator()
+		for iterator.Next() && e.Amount.GreaterThan(decimal.Zero) {
+			price := iterator.Key().(decimal.Decimal)
+			// 只匹配賣價 <= 買價
+			if e.Price.GreaterThanOrEqual(price) {
+				mergeOrder := iterator.Value().(*MergeOrder)
+				e1 := matchOrders(muCtx, tx, &e, &mergeOrder.orders)
+				if e1 != nil {
+					repError = e1
+					return e1
+				}
+				// 若整個價格點的賣單都吃光了，從 map 移除該價位
+				if len(mergeOrder.orders) == 0 {
+					sellLimitPriceQueue.sellLimitPriceQueue.Remove(price)
+				}
+			} else {
+				break // 價格不符合，停止遍歷
+			}
+		}
+		// 撮合完還有剩，掛入買單隊列
+		if e.Amount.GreaterThan(decimal.Zero) {
+			addToBuyQueue(e)
+		} else {
+			//當前訂完整搓合完更新訂單
+			e2 := UpdateTradedOrder(muCtx, tx, e, enum.COMPLETED)
+			if e2 != nil {
+				repError = e2
+				return e2
+			}
+		}
+		// 任一錯誤直接 return -> 自動 Rollback；正常 return nil -> 自動 Commit
+		return nil
+	})
+	if err != nil {
+		// 統一處理失敗
+		return repError
 	}
 	return nil
 }

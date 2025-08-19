@@ -52,4 +52,8 @@
 測試用API: test/Trad.postman_collection.json
 <br />
 
+### TODO
+訂單.交易記錄服務拆分(使用中間鍵MQ)
+<br />
+DB事務回滾後 買 賣 單簿(GO內部記憶體MAP會不一致)
 

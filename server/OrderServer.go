@@ -56,13 +56,14 @@ func CreateOrder(ctx *myContext.MyContext, tx *gorm.DB, e ExchangeOrder) *errors
 // RecordTradeDetail 紀錄此次 "撮合" 交易的詳細記錄，包含下單方與對手方資訊。
 // 參數:
 // - ctx: 請求上下文，包含請求相關資料。
+// - tx:  事務上下文
 // - current: 當前下單的訂單資訊。
 // - opponent: 對手方的訂單資訊。
 // - price: 撮合後的成交價格。
 // - matchAmount: 本次撮合的成交數量。
 // 回傳:
 // - *errors.Errx: 如果發生錯誤則回傳錯誤，成功則為 nil。
-func RecordTradeDetail(ctx *myContext.MyContext, current ExchangeOrder, opponent ExchangeOrder, price, matchAmount decimal.Decimal) *errors.Errx {
+func RecordTradeDetail(ctx *myContext.MyContext, tx *gorm.DB, current ExchangeOrder, opponent ExchangeOrder, price, matchAmount decimal.Decimal) *errors.Errx {
 	detail := dao.TradeDetail{
 		Price:       price,
 		DealAmount:  matchAmount,
@@ -79,7 +80,7 @@ func RecordTradeDetail(ctx *myContext.MyContext, current ExchangeOrder, opponent
 		detail.SellOrderId = current.OrderId
 	}
 	glog.Info("紀錄交易紀錄...", current)
-	err := dao.InsertTradeDetail(ctx, &detail)
+	err := dao.InsertTradeDetailTransaction(tx, &detail)
 	if err != nil {
 		glog.Errorf("recordTradeDetail err:%v", err)
 		return errors.NewBizErrx(tool.RecordTradeDetailError.Code, tool.RecordTradeDetailError.Msg)
@@ -93,7 +94,7 @@ func RecordTradeDetail(ctx *myContext.MyContext, current ExchangeOrder, opponent
 // - status: 订单状态。
 // 回傳:
 // - *errors.Errx: 如果發生錯誤則回傳錯誤，成功則為 nil。
-func UpdateTradedOrder(ctx *myContext.MyContext, e ExchangeOrder, status enum.ExchangeOrderStatus) *errors.Errx {
+func UpdateTradedOrder(ctx *myContext.MyContext, tx *gorm.DB, e ExchangeOrder, status enum.ExchangeOrderStatus) *errors.Errx {
 	glog.Infof("更新撮合交易訂單 updateTradedOrder: Trace: %v ExchangeOrder: %v", ctx.Trace, e)
 	updates := map[string]interface{}{
 		"amount":        e.Amount,       //买入或卖出量，对于市价买入单表
@@ -108,7 +109,7 @@ func UpdateTradedOrder(ctx *myContext.MyContext, e ExchangeOrder, status enum.Ex
 	case enum.CANCELED, enum.PARTIAL_CANCELED:
 		updates["canceled_time"] = now
 	}
-	rowsAffected, err := dao.UpdateExchangeOrderByOderId(e.OrderId, updates)
+	rowsAffected, err := dao.UpdateExchangeOrderByOderIdTransaction(tx, e.OrderId, updates)
 	if err != nil {
 		glog.Errorf("更新撮合交易訂單 updateTradedOrder: Trace: %v ExchangeOrder: %v", ctx.Trace, e)
 		return errors.NewBizErrx(tool.ExchangeOrderUpdateError.Code, tool.ExchangeOrderUpdateError.Msg)
