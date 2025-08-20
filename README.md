@@ -52,6 +52,14 @@
 測試用API: test/Trad.postman_collection.json
 <br />
 
+### 瀏覽 Swagger UI
+http://localhost:8081/swagger/index.html
+<br />
+初始化 Swagger 文件(有改動需要執行): swag init
+<br />
+![image](https://github.com/lzz0826/MatchmakingTransactions/blob/main/imges/003.png)
+
+
 ### TODO
 訂單.交易記錄服務拆分(使用中間鍵MQ)
 <br />

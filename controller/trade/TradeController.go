@@ -15,7 +15,15 @@ import (
 	"time"
 )
 
-// SellOrder掛賣單
+// SellOrder godoc
+// @Summary 賣單下單
+// @Description 用戶提交買單 (限價單LIMIT_PRICE / 市價單MARKET_PRICE)，建立交易訂單
+// @Tags trade
+// @Accept json
+// @Produce json
+// @Param order body req.SellOrderReq true "賣單請求"
+// @Success 200 {object} tool.BaseResp{data=server.ExchangeOrder} "下單成功"
+// @Router /tradeMatching/sellOrder [post]
 func SellOrder(ctx *myContext.MyContext) {
 	orderReq := req.SellOrderReq{}
 	if err := ctx.ShouldBindJSON(&orderReq); err != nil {
@@ -68,7 +76,7 @@ func SellOrder(ctx *myContext.MyContext) {
 		UseDiscount:  "0",
 		TradedAmount: decimal.Zero,
 	}
-	
+
 	//創建訂單 紀錄訂明細(事務)
 	err := server.CreateOrderANDRecordTradeDetailDelect(ctx, order)
 	if err != nil {
@@ -91,7 +99,15 @@ func SellOrder(ctx *myContext.MyContext) {
 	ctx.JSON(http.StatusOK, tool.RespOkStatus(&tool.SellOrderSuccess, tool.RespOk(order)))
 }
 
-// BuyOrder掛買單
+// BuyOrder godoc
+// @Summary 買單下單
+// @Description 用戶提交買單 (限價單LIMIT_PRICE / 市價單MARKET_PRICE)，建立交易訂單
+// @Tags trade
+// @Accept json
+// @Produce json
+// @Param order body req.BuyOrderReq true "買單請求"
+// @Success 200 {object} tool.BaseResp{data=server.ExchangeOrder} "下單成功"
+// @Router /tradeMatching/buyOrder [post]
 func BuyOrder(ctx *myContext.MyContext) {
 	orderReq := req.BuyOrderReq{}
 	if err := ctx.ShouldBindJSON(&orderReq); err != nil {
@@ -168,26 +184,35 @@ func BuyOrder(ctx *myContext.MyContext) {
 	ctx.JSON(http.StatusOK, tool.RespOkStatus(&tool.SellOrderSuccess, tool.RespOk(order)))
 }
 
-// BuyOrderCancel 買單取消->進MAP移除剩下訂單->檢查DB之前部分成功交易訂單
+// BuyOrderCancel godoc
+// @Summary 買單取消
+// @Description 用戶提交買單取消 (限價單)
+// @Tags trade
+// @Accept json
+// @Produce json
+// @Param order body req.BuyOrderCancelReq true "取消買單請求"
+// @Success 200 {object} tool.BaseResp{data=rep.BuyOrderRep} "取消成功"
+// @Router /tradeMatching/buyOrderCancel [post]
+// 買單取消->進MAP移除剩下訂單->檢查DB之前部分成功交易訂單
 func BuyOrderCancel(ctx *myContext.MyContext) {
-	sellOrderCancelReq := req.SellOrderCancelReq{}
-	if err := ctx.ShouldBindJSON(&sellOrderCancelReq); err != nil {
+	buyOrderCancelReq := req.BuyOrderCancelReq{}
+	if err := ctx.ShouldBindJSON(&buyOrderCancelReq); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"errors": err.Error()})
 		return
 	}
 
-	glog.Infof("Trace %v SellOrder BuyOrderCancel:%v", ctx.Trace, sellOrderCancelReq)
+	glog.Infof("Trace %v SellOrder BuyOrderCancel:%v", ctx.Trace, buyOrderCancelReq)
 
 	//訂單方向錯誤
-	if sellOrderCancelReq.Direction != enum.BUYSTR {
+	if buyOrderCancelReq.Direction != enum.BUYSTR {
 		ctx.JSON(http.StatusOK, tool.RespFailStatus(&tool.ExchangeOrderDirectionError, nil))
 		return
 	}
 
-	orderId := sellOrderCancelReq.OrderId
-	//memberId := sellOrderCancelReq.MemberId
-	price := sellOrderCancelReq.Price
-	glog.Infof("Trace %v SellOrderCancel SellOrderCancelReq:%v", ctx.Trace, sellOrderCancelReq)
+	orderId := buyOrderCancelReq.OrderId
+	//memberId := buyOrderCancelReq.MemberId
+	price := buyOrderCancelReq.Price
+	glog.Infof("Trace %v SellOrderCancel SellOrderCancelReq:%v", ctx.Trace, buyOrderCancelReq)
 	err := server.TradeMatchingService.OrderDelete(ctx, enum.BUY, orderId, price)
 	if err != nil {
 		ctx.JSON(http.StatusOK, tool.RespFail(err.Code(), err.Msg(), nil))
@@ -196,7 +221,16 @@ func BuyOrderCancel(ctx *myContext.MyContext) {
 	ctx.JSON(http.StatusOK, tool.RespOk(nil))
 }
 
-// SellOrderCancel 賣單取消->進MAP移除剩下訂單->檢查DB之前部分成功交易訂單
+// SellOrderCancel godoc
+// @Summary 賣單取消
+// @Description 用戶提交賣單取消 (限價單)
+// @Tags trade
+// @Accept json
+// @Produce json
+// @Param order body req.SellOrderCancelReq true "取消買單請求"
+// @Success 200 {object} tool.BaseResp{data=rep.SellOrderRep} "取消成功"
+// @Router /tradeMatching/sellOrderCancel [post]
+// 賣單取消->進MAP移除剩下訂單->檢查DB之前部分成功交易訂單
 func SellOrderCancel(ctx *myContext.MyContext) {
 	sellOrderCancelReq := req.SellOrderCancelReq{}
 	if err := ctx.ShouldBindJSON(&sellOrderCancelReq); err != nil {
@@ -224,7 +258,15 @@ func SellOrderCancel(ctx *myContext.MyContext) {
 	ctx.JSON(http.StatusOK, tool.RespOk(nil))
 }
 
-// CheckQueueMap 檢查 買 賣 簿
+// CheckQueueMap godoc
+// @Summary 檢查買賣簿
+// @Description 根據 direction (BUY/SELL) 檢查買單或賣單簿
+// @Tags trade
+// @Accept json
+// @Produce json
+// @Param direction query string true "訂單方向 (BUY / SELL)" Enums(BUY,SELL)
+// @Success 200 {object} tool.BaseResp{data=[]server.QueueInfo} "查詢成功"
+// @Router /tradeMatching/checkQueueMap [get]
 func CheckQueueMap(ctx *myContext.MyContext) {
 	var queueInfo []server.QueueInfo
 	direction := ctx.Query("direction") //訂單方向

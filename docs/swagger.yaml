@@ -1,0 +1,457 @@
+definitions:
+  enum.BaseSymbol:
+    enum:
+    - USDT
+    - USD
+    - BUSD
+    type: string
+    x-enum-varnames:
+    - BaseUSDT
+    - BaseUSD
+    - BaseBUSD
+  enum.CoinSymbol:
+    enum:
+    - BTC
+    - ETH
+    - BNB
+    - ADA
+    - SOL
+    type: string
+    x-enum-varnames:
+    - CoinBTC
+    - CoinETH
+    - CoinBNB
+    - CoinADA
+    - CoinSOL
+  enum.ExchangeOrderDirection:
+    enum:
+    - BUY
+    - SELL
+    type: string
+    x-enum-varnames:
+    - BUY
+    - SELL
+  enum.ExchangeOrderStatus:
+    enum:
+    - TRADING
+    - PARTIAL_COMPLETED
+    - COMPLETED
+    - PARTIAL_CANCELED
+    - CANCELED
+    - REJECTED
+    - OVERTIMED
+    type: string
+    x-enum-comments:
+      CANCELED: 完全取消
+      COMPLETED: 完全成交
+      OVERTIMED: 超時
+      PARTIAL_CANCELED: 部分取消
+      PARTIAL_COMPLETED: 部分成交
+      REJECTED: 訂單被拒
+      TRADING: 交易中
+    x-enum-descriptions:
+    - 交易中
+    - 部分成交
+    - 完全成交
+    - 部分取消
+    - 完全取消
+    - 訂單被拒
+    - 超時
+    x-enum-varnames:
+    - TRADING
+    - PARTIAL_COMPLETED
+    - COMPLETED
+    - PARTIAL_CANCELED
+    - CANCELED
+    - REJECTED
+    - OVERTIMED
+  enum.ExchangeOrderType:
+    enum:
+    - MARKET_PRICE
+    - LIMIT_PRICE
+    type: string
+    x-enum-comments:
+      LIMIT_PRICE: 限價 限價單是指投資人設定一個特定的價格，只有在市場價格達到或優於該價格時才會成交。
+      MARKET_PRICE: 市價 市價單則是指不指定價格，以當時市場上的最佳價格立即成交。
+    x-enum-descriptions:
+    - 市價 市價單則是指不指定價格，以當時市場上的最佳價格立即成交。
+    - 限價 限價單是指投資人設定一個特定的價格，只有在市場價格達到或優於該價格時才會成交。
+    x-enum-varnames:
+    - MARKET_PRICE
+    - LIMIT_PRICE
+  enum.Symbol:
+    enum:
+    - BTC/USDT
+    - ETH/USDT
+    - BNB/USDT
+    - ADA/USDT
+    - SOL/USDT
+    type: string
+    x-enum-varnames:
+    - SymbolBTCUSDT
+    - SymbolETHUSDT
+    - SymbolBNBUSDT
+    - SymbolADAUSDT
+    - SymbolSOLUSDT
+  rep.BuyOrderRep:
+    type: object
+  rep.SellOrderRep:
+    type: object
+  req.BuyOrderCancelReq:
+    properties:
+      direction:
+        description: 訂單方向
+        example: SELL
+        type: string
+      memberId:
+        description: 會員號
+        example: 10001
+        type: integer
+      orderId:
+        description: 撮合訂單號
+        example: SELL100011755067521826
+        type: string
+      price:
+        description: 挂单价格
+        example: 30000
+        type: number
+    required:
+    - direction
+    - memberId
+    - orderId
+    - price
+    type: object
+  req.BuyOrderReq:
+    properties:
+      amount:
+        description: 买入或卖出量，对于市价买入单表
+        example: 5
+        type: number
+      coinSymbol:
+        description: 币单位
+        example: BTC
+        type: string
+      direction:
+        description: 訂單方向
+        example: BUY
+        type: string
+      memberId:
+        description: 會員號
+        example: 10001
+        type: integer
+      price:
+        description: 挂单价格
+        example: 1
+        type: number
+      symbol:
+        description: 交易符號
+        example: BTC/USDT
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/enum.ExchangeOrderType'
+        description: 掛單類型 MARKET_PRICE LIMIT_PRICE
+        example: LIMIT_PRICE
+    required:
+    - amount
+    - coinSymbol
+    - direction
+    - memberId
+    - symbol
+    - type
+    type: object
+  req.SellOrderCancelReq:
+    properties:
+      direction:
+        description: 訂單方向
+        example: BUY
+        type: string
+      memberId:
+        description: 會員號
+        example: 10001
+        type: integer
+      orderId:
+        description: 撮合訂單號
+        example: BUY100011755067160543
+        type: string
+      price:
+        description: 挂单价格
+        example: 30000
+        type: number
+    required:
+    - direction
+    - memberId
+    - orderId
+    - price
+    type: object
+  req.SellOrderReq:
+    properties:
+      amount:
+        description: 买入或卖出量，对于市价买入单表
+        example: 5
+        type: number
+      coinSymbol:
+        description: 币单位
+        example: BTC
+        type: string
+      direction:
+        description: 訂單方向
+        example: BUY
+        type: string
+      memberId:
+        description: 會員號
+        example: 10001
+        type: integer
+      price:
+        description: 挂单价格
+        type: number
+      symbol:
+        description: 交易符號
+        example: BTC/USDT
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/enum.ExchangeOrderType'
+        description: 掛單類型 MARKET_PRICE LIMIT_PRICE
+        example: LIMIT_PRICE
+    required:
+    - amount
+    - coinSymbol
+    - direction
+    - memberId
+    - symbol
+    - type
+    type: object
+  server.ExchangeOrder:
+    properties:
+      amount:
+        description: 买入或卖出量，对于市价买入单表
+        type: number
+      basesSymbol:
+        allOf:
+        - $ref: '#/definitions/enum.BaseSymbol'
+        description: 结算单位
+      canceledTime:
+        description: 取消时间
+        type: string
+      coinSymbol:
+        allOf:
+        - $ref: '#/definitions/enum.CoinSymbol'
+        description: 币单位
+      completedTime:
+        description: 交易完成时间
+        type: string
+      direction:
+        allOf:
+        - $ref: '#/definitions/enum.ExchangeOrderDirection'
+        description: 订单方向
+      memberId:
+        description: 會員號
+        type: integer
+      orderId:
+        description: 撮合訂單號
+        type: string
+      price:
+        description: 挂单价格
+        type: number
+      status:
+        allOf:
+        - $ref: '#/definitions/enum.ExchangeOrderStatus'
+        description: 订单状态
+      symbol:
+        allOf:
+        - $ref: '#/definitions/enum.Symbol'
+        description: 交易符號
+      time:
+        description: 挂单时间
+        type: string
+      tradedAmount:
+        description: 成交量
+        type: number
+      turnover:
+        description: 成交額 對市價買賣有用
+        type: number
+      type:
+        allOf:
+        - $ref: '#/definitions/enum.ExchangeOrderType'
+        description: 掛單類型
+      useDiscount:
+        description: 是否使用折扣 0 不使用 1使用
+        type: string
+    type: object
+  server.MergeOrder:
+    type: object
+  server.QueueInfo:
+    properties:
+      merge:
+        allOf:
+        - $ref: '#/definitions/server.MergeOrder'
+        description: 該價位的合併掛單
+      orders:
+        description: 該價位所有訂單
+        items:
+          $ref: '#/definitions/server.ExchangeOrder'
+        type: array
+      price:
+        description: 賣價
+        type: number
+    type: object
+  tool.BaseResp:
+    properties:
+      code:
+        type: integer
+      data: {}
+      message:
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact:
+    name: tony
+  description: 股票撮合系統
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: TradeMatching
+  version: "1.0"
+paths:
+  /tradeMatching/buyOrder:
+    post:
+      consumes:
+      - application/json
+      description: 用戶提交買單 (限價單LIMIT_PRICE / 市價單MARKET_PRICE)，建立交易訂單
+      parameters:
+      - description: 買單請求
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/req.BuyOrderReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 下單成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/tool.BaseResp'
+            - properties:
+                data:
+                  $ref: '#/definitions/server.ExchangeOrder'
+              type: object
+      summary: 買單下單
+      tags:
+      - trade
+  /tradeMatching/buyOrderCancel:
+    post:
+      consumes:
+      - application/json
+      description: 用戶提交買單取消 (限價單)
+      parameters:
+      - description: 取消買單請求
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/req.BuyOrderCancelReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/tool.BaseResp'
+            - properties:
+                data:
+                  $ref: '#/definitions/rep.BuyOrderRep'
+              type: object
+      summary: 買單取消
+      tags:
+      - trade
+  /tradeMatching/checkQueueMap:
+    get:
+      consumes:
+      - application/json
+      description: 根據 direction (BUY/SELL) 檢查買單或賣單簿
+      parameters:
+      - description: 訂單方向 (BUY / SELL)
+        enum:
+        - BUY
+        - SELL
+        in: query
+        name: direction
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查詢成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/tool.BaseResp'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/server.QueueInfo'
+                  type: array
+              type: object
+      summary: 檢查買賣簿
+      tags:
+      - trade
+  /tradeMatching/sellOrder:
+    post:
+      consumes:
+      - application/json
+      description: 用戶提交買單 (限價單LIMIT_PRICE / 市價單MARKET_PRICE)，建立交易訂單
+      parameters:
+      - description: 賣單請求
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/req.SellOrderReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 下單成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/tool.BaseResp'
+            - properties:
+                data:
+                  $ref: '#/definitions/server.ExchangeOrder'
+              type: object
+      summary: 賣單下單
+      tags:
+      - trade
+  /tradeMatching/sellOrderCancel:
+    post:
+      consumes:
+      - application/json
+      description: 用戶提交賣單取消 (限價單)
+      parameters:
+      - description: 取消買單請求
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/req.SellOrderCancelReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/tool.BaseResp'
+            - properties:
+                data:
+                  $ref: '#/definitions/rep.SellOrderRep'
+              type: object
+      summary: 賣單取消
+      tags:
+      - trade
+swagger: "2.0"

@@ -11,8 +11,9 @@ func RegisterRoutes(router *gin.Engine) {
 
 	unprotected := router.Group("/tradeMatching")
 	{
+
 		unprotected.GET("/test", myContext.Wrap(index.GetById))
-		
+
 		unprotected.POST("/buyOrder", myContext.Wrap(trade.BuyOrder))               //買單
 		unprotected.POST("/sellOrder", myContext.Wrap(trade.SellOrder))             //賣單
 		unprotected.POST("/buyOrderCancel", myContext.Wrap(trade.BuyOrderCancel))   //買單取消

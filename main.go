@@ -3,9 +3,12 @@ package main
 import (
 	"TradeMatching/common/mysql"
 	"TradeMatching/config"
+	_ "TradeMatching/docs"
 	"TradeMatching/middleware"
 	routes "TradeMatching/route"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 //TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
@@ -13,6 +16,15 @@ import (
 
 var HttpServer *gin.Engine
 
+// @title TradeMatching
+// @version 1.0
+// @description 股票撮合系統
+// @contact.name tony
+// @contact.url
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:8081
+// schemes http
 func main() {
 	// 服务停止时清理数据库链接
 	defer func() {
@@ -47,6 +59,9 @@ func RunHttp() {
 
 	//使用自訂上下文
 	HttpServer.Use(middleware.TraceMiddleware())
+
+	// Swagger UI
+	HttpServer.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// 注册路由
 	routes.RegisterRoutes(HttpServer)
